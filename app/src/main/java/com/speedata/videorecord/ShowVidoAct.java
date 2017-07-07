@@ -46,10 +46,13 @@ public class ShowVidoAct extends Activity implements SurfaceHolder.Callback {
     private static final String DEVFILE_PATH = "/sys/class/misc/mtgpio/pin";
     private Handler handler;
     private boolean isflag = true;
+    private SurfaceHolder holder;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        initScreen();
+        setContentView(R.layout.activity_main);
 
         //重写AutoFocusCallback接口
         mAutoFocusCallback = new Camera.AutoFocusCallback() {
@@ -62,16 +65,22 @@ public class ShowVidoAct extends Activity implements SurfaceHolder.Callback {
                 }
             }
         };
-        initScreen();
-        setContentView(R.layout.activity_main);
-        gpsUtil = new GPSUtil();
-        gpsUtil.openGPS(getContentResolver(),this);
-        gpsUtil.registerGPS();
         tvTime = (TextView) findViewById(R.id.capture_textview_information);
         tvGPS = (TextView) findViewById(R.id.tv_gps);
         mSurfaceview = (SurfaceView) findViewById(R.id.capture_surfaceview);
         mBtnStartStop = (ImageButton) findViewById(R.id.ib_stop);
-        SurfaceHolder holder = mSurfaceview.getHolder();// 取得holder
+
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        gpsUtil = new GPSUtil();
+        gpsUtil.openGPS(getContentResolver(),this);
+        gpsUtil.registerGPS();
+        // 取得holder
+        holder = mSurfaceview.getHolder();
 
         holder.addCallback(this); // holder加入回调接口
 
@@ -88,7 +97,6 @@ public class ShowVidoAct extends Activity implements SurfaceHolder.Callback {
         }
         handler.postDelayed(runnable, 0);
     }
-
 
     Runnable runnable = new Runnable() {
         @Override
@@ -128,11 +136,11 @@ public class ShowVidoAct extends Activity implements SurfaceHolder.Callback {
 
     //初始化Camera设置
     public void initCamera() {
-        if (myCamera == null && !isView) {
+        if (myCamera == null ) {
             myCamera = Camera.open();
             Log.i(TAG, "camera.open");
         }
-        if (myCamera != null && !isView) {
+        if (myCamera != null  ) {
             try {
                 myParameters = myCamera.getParameters();
                 myParameters.setPreviewSize(1920, 1080);
@@ -154,6 +162,7 @@ public class ShowVidoAct extends Activity implements SurfaceHolder.Callback {
     public void surfaceChanged(SurfaceHolder holder, int format, int width,
                                int height) {
         mSurfaceHolder = holder;
+        initCamera();
     }
 
 
@@ -242,12 +251,14 @@ public class ShowVidoAct extends Activity implements SurfaceHolder.Callback {
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         // surfaceDestroyed的时候同时对象设置为null
-        myCamera.setPreviewCallback(null);
-        myCamera.stopPreview();
-        myCamera.release();
-        myCamera = null;
-        mSurfaceview = null;
-        mSurfaceHolder = null;
+        if (myCamera!=null){
+            myCamera.setPreviewCallback(null);
+            myCamera.stopPreview();
+            myCamera.release();
+            myCamera = null;
+            isView=true;
+        }
+        Log.i(TAG, "surfaceDestroyed: ");
         if (mRecorder != null) {
             mRecorder.release();
             mRecorder = null;

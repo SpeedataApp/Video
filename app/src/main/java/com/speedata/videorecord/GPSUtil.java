@@ -10,9 +10,14 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Iterator;
 
 import static android.location.LocationManager.GPS_PROVIDER;
@@ -186,6 +191,23 @@ public class GPSUtil {
         if (location != null) {
             info = "设备位置信息\n经度：" + String.valueOf(location.getLongitude()) + "\n" +
                     "纬度" + String.valueOf(location.getLatitude());
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    File file=new File(getSDPath(),"location.txt");
+                    try {
+                        FileOutputStream fileOutputStream=new FileOutputStream(file);
+                        fileOutputStream.write(info.getBytes());
+                        fileOutputStream.flush();
+                        fileOutputStream.close();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }).start();
         } else {
             info = null;
         }
@@ -195,7 +217,19 @@ public class GPSUtil {
     public String gpsInfo() {
         return info;
     }
-
+    /**
+     * 获取SD path
+     */
+    public String getSDPath() {
+        File sdDir = null;
+        boolean sdCardExist = Environment.getExternalStorageState()
+                .equals(android.os.Environment.MEDIA_MOUNTED); // 判断sd卡是否存在
+        if (sdCardExist) {
+            sdDir = Environment.getExternalStorageDirectory();// 获取跟目录
+            return sdDir.toString();
+        }
+        return null;
+    }
     /**
      * 返回查询条件
      *
